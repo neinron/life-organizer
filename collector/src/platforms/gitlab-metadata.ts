@@ -6,11 +6,11 @@ export async function gitlabHeads(env:Env){
  if(!token)throw new NotConfiguredError('GitLab read-only metadata',['GITLAB_READ_TOKEN (read_repository only)']);
  const rows=[];
  for(const project of projects){
-  const response=await fetch(`https://gitlab.lrz.de/api/v4/projects/${encodeURIComponent(project)}/repository/branches/main`,{headers:{'PRIVATE-TOKEN':token,Accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(15000)});
+  const response=await fetch(`https://gitlab.lrz.de/api/v4/projects/${encodeURIComponent(project)}/repository/files/README.md?ref=main`,{method:'HEAD',headers:{'PRIVATE-TOKEN':token},redirect:'manual',signal:AbortSignal.timeout(15000)});
   if(!response.ok){await response.body?.cancel();throw new Error(`GitLab read-only metadata HTTP${response.status}; previous checkpoint retained`);}
-  const data=await response.json() as {commit?:{id?:string;title?:string;web_url?:string;committed_date?:string}};
-  if(!/^[a-f0-9]{40}$/.test(data.commit?.id??''))throw new Error('Invalid GitLab commit response');
-  rows.push({project,branch:'main',sha:data.commit!.id,title:data.commit!.title,url:data.commit!.web_url,committed_at:data.commit!.committed_date});
+  const sha=response.headers.get('x-gitlab-commit-id')??'';
+  if(!/^[a-f0-9]{40}$/.test(sha))throw new Error('Invalid GitLab commit response');
+  rows.push({project,branch:'main',sha,url:`https://gitlab.lrz.de/${project}/-/commit/${sha}`,method:'Repository Files HEAD metadata; read_repository scope'});
  }
  return {complete:true,checked_at:new Date().toISOString(),repositories:rows};
 }
