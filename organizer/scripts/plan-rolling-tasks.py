@@ -4,11 +4,13 @@ import argparse, copy, json, re, sys
 from datetime import datetime, timedelta, time
 from pathlib import Path
 from planning_scope import in_scope, is_fixed
+from calendar_policy import require_local_calendars
 
-from lib import planning_engine as p
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'lib'))
+import planning_engine as p
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK_CAL = 'CONFIGURE_TASK_CALENDAR_ID'
+TASK_CAL = 'notion_tasks'
 
 def event_interval(e):
     return p.parse_dt(e.get('start', {}).get('dateTime') or e.get('start', {}).get('date')), p.parse_dt(e.get('end', {}).get('dateTime') or e.get('end', {}).get('date'))
@@ -41,10 +43,12 @@ def reusable_timeline(task, fb, details, profile):
     return result
 
 def plan(data, fb, events, profile, now, calendar_details=None):
+    require_local_calendars(fb,profile,now)
     assert data.get('has_more') is False and not events.get('nextPageToken')
     assert p.parse_dt(fb['timeMin']) <= now < p.parse_dt(fb['timeMax'])
     assert not any(c.get('errors') for c in fb['calendars'].values())
     policy = profile['planning']; p.WORK_START = time.fromisoformat(policy['work_start'])
+    task_cal=profile.get('calendars',{}).get('notion_tasks',TASK_CAL)
     tasks = p.extract_tasks(data)
     active = {c['notion_id'] for c in profile['courses'] if c.get('plan_work')}
     general = set(policy['general_task_ids']); deferred = policy['deferred_task_ids']
@@ -72,11 +76,11 @@ def plan(data, fb, events, profile, now, calendar_details=None):
     effective['calendars']['verified_external_commitments']={'busy':[{'start':e['start'],'end':e['end']} for e in policy.get('external_commitments',[])]}
     # Freebusy remains the source for every other selected calendar. Replace only confirmed
     # movable mirror events; unknown, manually changed and retained task-calendar events stay busy.
-    effective['calendars'][TASK_CAL]['busy'] = []
+    effective['calendars'][task_cal]['busy'] = []
     for e in live_events:
         if e['id'] in removed_events: continue
         a,b = event_interval(e)
-        if a and b and b > now: effective['calendars'][TASK_CAL]['busy'].append({'start':a.isoformat(), 'end':(b+timedelta(minutes=15)).isoformat()})
+        if a and b and b > now: effective['calendars'][task_cal]['busy'].append({'start':a.isoformat(), 'end':(b+timedelta(minutes=15)).isoformat()})
     retained = [t for t in tasks if t.id not in movable and t.status in ('not started','in progress') and p.task_interval(t) and t.do_end > now]
     fixed = p.extract_busy(effective)
     fixed += [p.Interval(t.do_start,t.do_end+timedelta(minutes=15),'retained:'+t.id) for t in retained]

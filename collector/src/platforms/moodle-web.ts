@@ -28,6 +28,8 @@ import {
 } from "./moodle";
 import { fetchIcsEvents } from "./moodle-feeds";
 import { embeddedMedia } from "../collector/web";
+import { videoMetadata } from "./moodle-media";
+import { storedItem } from "../collector/store";
 
 const SITE = "https://www.moodle.tum.de";
 
@@ -294,7 +296,16 @@ export function registerMoodleWebTools(server: McpServer, env: Env) {
 					seen.add(l.url);
 					return true;
 				});
-				return json({ url: r.url.href, status: r.status, text: mainText(r.text, max_chars), links: links.slice(0, 200), embedded_media: embeddedMedia(r.text, r.url.href) });
+				let measured_media: unknown;
+				const requestedId=Number(new URL(path,SITE).searchParams.get('id'));
+				if(Number.isSafeInteger(requestedId)&&requestedId>0){
+					const collected=await storedItem(env,`moodle:cm:${requestedId}`);
+					const content=collected?.content as any;
+					if(content?.course_id===121285&&content.page?.embedded_media?.some((v:any)=>String(v.url).endsWith('.mp4'))){
+						try{measured_media=await videoMetadata(env,requestedId);}catch(e){measured_media={error:e instanceof Error?e.message:String(e),verified:false};}
+					}
+				}
+				return json({ url: r.url.href, status: r.status, text: mainText(r.text, max_chars), links: links.slice(0, 200), embedded_media: embeddedMedia(r.text, r.url.href), measured_media });
 			}),
 	);
 

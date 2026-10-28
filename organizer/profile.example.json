@@ -36,5 +36,10 @@
       "enabled": true
     },
     "verified_reusable_blocks": []
+  },
+  "local_calendars": {
+    "enabled": false,
+    "calendar_ids": [],
+    "freshness_minutes": 15
   }
 }

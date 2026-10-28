@@ -39,3 +39,4 @@ jobs:
           python-version: '3.13'
       - run: python3 scripts/test_rolling_plan.py
       - run: python3 scripts/test_sync_files.py
+      - run: python3 scripts/test_direct_access.py

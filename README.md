@@ -25,10 +25,20 @@ Only create personal tasks from concrete source evidence. A shipment announcemen
 ```sh
 cd collector && npm ci && npm test && npm run type-check
 cd ../calendar-sync && npm ci && npm run test:worker && npm run typecheck
-cd ../organizer && python3 scripts/test_rolling_plan.py && python3 scripts/test_sync_files.py
+cd ../organizer && python3 scripts/test_rolling_plan.py && python3 scripts/test_sync_files.py && python3 scripts/test_direct_access.py
 ```
 
 This is a sanitized code snapshot, not a backup of a personal deployment. No personal configuration, messages, source materials, runtime journals or pre-existing private Git history are included. Use your own resource IDs, OAuth settings and permissions.
+
+## Direct local access
+
+On macOS, build `python3 organizer/scripts/build-apple-store.py`. The helper uses Apple's EventKit API, never browser automation or copied Exchange passwords. Explicitly request event/reminder permissions once; macOS grants full access, while this helper exposes no calendar-event writes and limits reminder writes to the existing Life Organizer list and stable Life-IDs. Discover calendars, then explicitly allowlist Exchange/personal iCloud IDs in your private profile. Avoid adding duplicate Google/TUM subscriptions.
+
+Use `organizer/scripts/normalize-notion.py` to validate all connector-view pages and write typed snapshots/manifests without loading credentials. Use `organizer/scripts/local-calendars.py` to merge native calendar availability into a fresh Google freebusy snapshot before planning. The planner rejects missing/stale required native calendar coverage.
+
+The collector exposes `moodle_video_metadata` for collected ASE lecture MP4 headers (bounded ranges/prefix, max256KiB; no full video download) and `gitlab_repository_heads` for the two configured ASE repositories. The latter needs a separately approved `GITLAB_READ_TOKEN` Worker Secret with `read_repository` scope. No browser cookies or local credential-store probing. Configure the permitted teaching sources for your own deployment before use.
+
+Native calendar snapshots reflect accounts synchronized by macOS; local runs still need this Mac. Phone delivery is not verified by a successful Mac reminder write. GitLab API readiness must be checked after configuring its separate token.
 
 ## Credits
 

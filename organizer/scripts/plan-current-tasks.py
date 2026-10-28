@@ -4,8 +4,10 @@ import argparse, json, sys
 from pathlib import Path
 from datetime import datetime, timedelta, time
 from planning_scope import in_scope, is_fixed
+from calendar_policy import require_local_calendars
 
-from lib import planning_engine as p
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'lib'))
+import planning_engine as p
 
 root=Path(__file__).resolve().parents[1]
 ap=argparse.ArgumentParser();ap.add_argument('--snapshot-dir',type=Path,required=True);ap.add_argument('--now',required=True);ap.add_argument('--out-prefix',default='plan-current');a=ap.parse_args()
@@ -15,6 +17,7 @@ p.validate_snapshot_manifest(d/'notion-manifest.json',d/'notion-latest.json','no
 p.validate_snapshot_manifest(d/'freebusy-manifest.json',d/'freebusy-latest.json','google_freebusy')
 data=json.loads((d/'notion-latest.json').read_text());fb=json.loads((d/'freebusy-latest.json').read_text());tasks=p.extract_tasks(data);busy=p.extract_busy(fb);busy += [p.Interval(p.parse_dt(e['start']),p.parse_dt(e['end']),'external') for e in policy.get('external_commitments',[])];now=p.parse_dt(a.now)
 assert now and policy['enabled']
+require_local_calendars(fb,profile,now)
 assert p.parse_dt(fb['timeMin']) <= now < p.parse_dt(fb['timeMax'])
 active={c['notion_id'] for c in profile['courses'] if c.get('plan_work', True)};general=set(policy['general_task_ids']);deferred=policy['deferred_task_ids'];candidates=[];retained=[]
 for task in tasks:

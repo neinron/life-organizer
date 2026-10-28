@@ -302,12 +302,12 @@ export class MoodleClient {
 	 * One request with the session cookies and no redirect following (session mode). For the watcher:
 	 * the redirect of mod/resource/view.php?redirect=1 names the current file revision.
 	 */
-	async rawFetch(url: string, redirect: "manual" | "follow" = "manual"): Promise<Response> {
+	async rawFetch(url: string, redirect: "manual" | "follow" = "manual", extraHeaders: Record<string,string> = {}): Promise<Response> {
 		if (this.mode !== "session") throw new MoodleError("Raw Moodle requests need the SSO session");
 		const u = new URL(url, SITE);
 		if (u.hostname !== HOST) throw new Error(`Only ${HOST} is allowed`);
 		const s = await this.loadSession(false);
-		const headers: Record<string, string> = {};
+		const headers: Record<string, string> = { ...extraHeaders };
 		const cookie = new CookieJar(s.cookies).header(u);
 		if (cookie) headers.Cookie = cookie;
 		return withTimeout(fetch(u, { headers, redirect }), TIMEOUT_MS, "Moodle");

@@ -26,6 +26,8 @@ import watcherPolicy from "../config/watcher.json";
 import { isQuietHours } from "./lib/quiet-hours";
 
 import { registerNetsecMetadataTools } from "./collector/units/netsec";
+import { registerMoodleMediaTools } from "./platforms/moodle-media";
+import { registerGitlabMetadataTools } from "./platforms/gitlab-metadata";
 
 export const SERVER_VERSION = "0.10.0-life.1";
 
@@ -51,6 +53,8 @@ const TOOL_GROUPS: [string, Register][] = [
 	["its scoreboard", registerItsScoreboardTools],
 	["collector", registerCollectorTools],
 	["netsec metadata", registerNetsecMetadataTools],
+	["lecture video metadata", registerMoodleMediaTools],
+	["GitLab repository metadata", registerGitlabMetadataTools],
 ];
 
 export function registerOwnerTools(server: McpServer, env: Env) {
@@ -64,7 +68,7 @@ export function registerOwnerTools(server: McpServer, env: Env) {
 }
 
 export class TumMCP extends McpAgent<Env, Record<string, never>, Props> {
-	server = new McpServer({ name: "TUM Watcher — Example User", version: SERVER_VERSION }, { instructions: watcherPolicy.instructions });
+	server = new McpServer({ name: "Life Organizer", version: SERVER_VERSION }, { instructions: watcherPolicy.instructions });
 
 	async init() {
 		// Defense in depth: the OAuth callback already rejects every other GitHub account.

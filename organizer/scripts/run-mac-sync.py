@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """One repeatable preview/apply run, holding the shared lease until the report is saved."""
-import json, subprocess, sys, uuid
+import json, os, subprocess, sys, uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,7 +10,7 @@ def main():
     now = datetime.now(timezone.utc)
     owner = 'mac-sync-' + now.strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex[:8]
     command = lambda *args: subprocess.run([sys.executable, *args], cwd=ROOT, capture_output=True, text=True)
-    lease = command('scripts/lease.py', 'acquire', owner)
+    lease = command('scripts/lease.py', 'acquire', owner, '--pid', str(os.getpid()), '--recover-dead')
     if lease.returncode == 2:
         print(json.dumps({'status': 'busy', 'changes': 0})); return 0
     if lease.returncode:
