@@ -1,0 +1,41 @@
+name: Checks
+on: [push, pull_request]
+jobs:
+  collector:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: collector
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+      - run: npm run type-check
+  calendar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: calendar-sync
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run test:worker
+      - run: npm run typecheck
+  organizer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: organizer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python3 scripts/test_rolling_plan.py
+      - run: python3 scripts/test_sync_files.py

@@ -1,0 +1,41 @@
+{
+  "name": "life-collector-example-local",
+  "main": "src/local.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "local-cache"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "life-collector-example-local"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "FILES",
+      "bucket_name": "life-collector-example-local-files"
+    }
+  ],
+  "services": [
+    {
+      "binding": "COLLECTOR",
+      "service": "life-collector-example-local",
+      "entrypoint": "CollectorRunner"
+    }
+  ],
+  "vars": {
+    "PUBLIC_ORIGIN": "http://127.0.0.1:8788"
+  },
+  "dev": {
+    "port": 8788,
+    "ip": "127.0.0.1"
+  }
+}

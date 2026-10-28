@@ -1,0 +1,12 @@
+**/.env
+**/.env.*
+!**/.env.example
+**/.dev.vars*
+**/profile.json
+**/runtime/
+**/node_modules/
+**/.wrangler/
+**/dist/
+**/__pycache__/
+*.log
+.DS_Store

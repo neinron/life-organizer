@@ -1,0 +1,29 @@
+name = "notion-calendar-sync"
+main = "worker/src/index.ts"
+compatibility_date = "2026-05-20"
+
+
+[triggers]
+crons = ["* * * * *", "7 3 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "notion_calendar_sync"
+database_id = "CONFIGURE_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[observability]
+enabled = true
+
+  [observability.logs]
+  head_sampling_rate = 1
+
+  [observability.traces]
+  enabled = true
+  head_sampling_rate = 0.1
+
+[vars]
+NOTION_VERSION = "2022-06-28"
+DEPLOY_BRANCH = "main"
+PUBLIC_BASE_URL = "https://calendar-sync.example.com"
+GOOGLE_TIME_ZONE = "Europe/Berlin"

@@ -1,0 +1,40 @@
+{
+  "system_name": "Life Organizer",
+  "timezone": "Europe/Berlin",
+  "study_root": "/path/to/your/files",
+  "semester_folder": "Current",
+  "courses": [],
+  "excluded_courses": [],
+  "calendars": {
+    "notion_tasks": "CONFIGURE_TASK_CALENDAR_ID",
+    "tum_import": "CONFIGURE_OPTIONAL_IMPORT_ID"
+  },
+  "quiet_hours": {
+    "enabled": false,
+    "timezone": "Europe/Berlin",
+    "start": "23:00",
+    "end": "06:00"
+  },
+  "planning": {
+    "enabled": true,
+    "work_start": "08:30",
+    "daily_work_minutes": 240,
+    "flexible_budget": true,
+    "flex_max_minutes": 360,
+    "deadline_reserve_days": 1,
+    "general_task_ids": [],
+    "deferred_task_ids": {},
+    "earliest_start": {},
+    "task_durations": {},
+    "personal": {
+      "enabled": true,
+      "context_ids": [],
+      "task_ids": [],
+      "standalone_created_since": "2026-10-28"
+    },
+    "reusable_work_blocks": {
+      "enabled": true
+    },
+    "verified_reusable_blocks": []
+  }
+}
