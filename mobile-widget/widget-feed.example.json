@@ -1,0 +1,4 @@
+{
+  "endpoint": "https://organizer.jaronschurer.com/summary",
+  "write_token": "REPLACE_WITH_YOUR_PRIVATE_WRITER_TOKEN"
+}

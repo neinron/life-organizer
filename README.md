@@ -6,6 +6,7 @@ A personal organizer for university, research, career and everyday life. It turn
 
 - `collector/`: read-only Cloudflare MCP collector with resumable change journal, Moodle/TUM integrations and metadata-only Netsec monitoring.
 - `organizer/`: offline planning, verified file sync and shared run lock. Start from `profile.example.json`; keep your actual profile private.
+- `mobile-widget/`: authenticated HTTPS summary feed and Scriptable iPhone widget; separate read/write credentials, local publishing, cached offline display.
 - `desktop-widget/`: Übersicht information board with attention notes, direct Notion app links and automatic external-display selection. See its README for setup and the private data contract.
 - `calendar-sync/`: existing Notion ↔ Google Calendar worker, including new standalone personal tasks.
 

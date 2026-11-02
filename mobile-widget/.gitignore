@@ -1,0 +1,5 @@
+widget-feed.json
+feed-access.json
+summary.json
+*.local.json
+__pycache__/
