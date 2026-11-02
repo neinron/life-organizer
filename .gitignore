@@ -22,3 +22,6 @@
 # Local preview capture metadata
 **/.playwright-cli/
 **/output/playwright/
+
+# User-specific optional feed deployment
+/mobile-widget/wrangler.jsonc

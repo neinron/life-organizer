@@ -30,6 +30,19 @@ The existing iCloud Scriptable file retains its filename and widget binding. Run
 
 ## Configure your own deployment
 
+Use a hostname in a Cloudflare-managed zone you own. The example disables workers.dev and preview URLs; replace the example domain before deploying so the Worker has a reachable custom hostname.
+
+From `mobile-widget/`:
+
+```sh
+cp wrangler.example.jsonc wrangler.jsonc
+npx wrangler login
+npx wrangler kv namespace create life-organizer-board
+```
+
+In your local `wrangler.jsonc`, replace `organizer.example.com` and the KV namespace placeholder with your own values. Keep the binding name `BOARD`. The config has no secret values. Continue with the steps below; configure each token digest with `npx wrangler secret put READ_TOKEN_SHA256` and `npx wrangler secret put WRITE_TOKEN_SHA256`, then deploy with `npx wrangler deploy`.
+
+
 1. Create a dedicated Cloudflare KV namespace and bind it as `BOARD`. Configure the Worker entry point as `worker.mjs` and use your own custom hostname. Keep public preview endpoints disabled.
 2. Generate independent random reader/writer keys (32 random bytes each). Store only their SHA-256 hex digests in Worker secrets `READ_TOKEN_SHA256` and `WRITE_TOKEN_SHA256`. Provision the original keys privately; never put them in Git or URLs.
 3. Deploy using your own Wrangler configuration. Check that an unauthenticated `GET /summary` is denied before supplying personal content.
@@ -38,4 +51,4 @@ The existing iCloud Scriptable file retains its filename and widget binding. Run
 
 The local data adapter must produce a valid editorial board first. No automatic planner or remote-source polling is installed by the feed. The mobile script requests refresh after at least fifteen minutes; actual scheduling belongs to iOS. Home Screen widgets cannot scroll. Short mobile variants, measured line wrapping and flexible sections fit the available content budget; use the full app for longer detail.
 
-[Mockup previews](../README.md#preview) illustrate presentation with invented content; they are not simulator screenshots or proof of device behavior.
+[Mockup previews](../README.md#widget-previews) illustrate presentation with invented content; they are not simulator screenshots or proof of device behavior.

@@ -147,11 +147,11 @@ You need a Cloudflare account and admin access to this GitHub repository.
 2. Select **GitHub** (in some dashboards: **Import a repository**). Authorize the Cloudflare GitHub app if Cloudflare asks for it.
 3. Select your copy of this repository.
 4. Set these values:
-   - Project name: `tum-mcp`. It must be the same as `name` in `wrangler.jsonc`, or the build fails.
+   - Project name: your chosen collector Worker name. It must match `name` in `collector/wrangler.jsonc`.
    - Production branch: `main`.
    - Build command: empty.
    - Deploy command: `npx wrangler deploy` (default).
-   - Root directory: `/` (default).
+   - Root directory: `collector` (this repository contains several components).
 5. Select **Save and Deploy**.
 
 The first deploy creates these resources automatically, because `wrangler.jsonc` has the bindings without IDs ([automatic provisioning](https://developers.cloudflare.com/workers/wrangler/configuration/#automatic-provisioning)):

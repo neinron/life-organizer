@@ -71,9 +71,17 @@ The shared lease coordinates local runs. Collection checkpoints and explicit ack
 
 The MCP transport is stateless; protocol connections do not create persistent database sessions. Source collection, calendar synchronization and board publication have separate lifecycles. Evaluation and native Mac operations require the configured local runner and an awake Mac. A healthy cloud endpoint alone does not establish a fresh or complete organizer run.
 
-## Set up and operate
+## Set up your own organizer
 
-Start with [Setup](docs/SETUP.md), configure your own sources and permissions, and validate each component before relying on it. Personal automation prompts, credentials and a working local reasoning agent are not bundled.
+Start with a small, supervised setup: **your Notion tasks + selected calendars + a local agent**. Add the university collector, calendar mirrors, document filing and widgets as needed.
+
+1. **Prepare the checkout.** Use a Mac for the full native workflow; install Git, Node.js 24 LTS, Python and Xcode Command Line Tools. Clone the repository and copy `organizer/profile.example.json` to the ignored `organizer/profile.json`.
+2. **Connect your own accounts.** Give the agent access to the intended Notion database and calendars. The bundled collector targets TUM sources and needs its own Cloudflare/GitHub OAuth setup; other sources need suitable direct connections or adapted collectors.
+3. **Define your scope and rules.** Configure task eligibility, working hours, actual durations, calendar IDs and permissions. Match the expected Notion schema; keep planning changes disabled until previews are verified.
+4. **Configure the agent.** Use the [starter instructions](docs/templates/organizer-instructions.md), supply your priorities and run once in proposal-only mode. The reasoning agent, account permissions and recurring schedule are not installed by cloning this repository.
+5. **Verify before expanding.** Review one task change, read it back and check duplicate prevention. Then add optional sync, document filing and the Mac/iPhone boards.
+
+The [step-by-step setup guide](docs/SETUP.md) includes commands, configuration fields, Notion schema expectations and a checkpoint for each stage. It also explains the remaining manual work and which integrations can be skipped. Use [Operations](docs/OPERATIONS.md) for recurring runs and recovery.
 
 | Guide | Covers |
 | --- | --- |
