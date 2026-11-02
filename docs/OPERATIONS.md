@@ -13,7 +13,7 @@
 
 ## Refresh and limits
 
-The Mac widget checks its local source every minute. The publisher sends only changed content, with at least five minutes between uploads. The display selector checks attached monitors every 15 seconds without querying Cloudflare. Scriptable requests a refresh no earlier than 15 minutes; iOS decides actual scheduling. Reimport the script after code changes; board content changes use the existing feed.
+The Mac widget has no periodic content refresh. A successful organizer run invokes `publish-feed.py --publish` once; only changed content is uploaded and that one Mac widget is refreshed. The display selector checks attached monitors every 15 seconds without querying Cloudflare. Scriptable requests a refresh no earlier than 15 minutes; iOS decides actual scheduling. Reimport the script after code changes; board content changes use the existing feed.
 
 ## Recovery
 
@@ -27,3 +27,5 @@ The Mac widget checks its local source every minute. The publisher sends only ch
 | Mail draft does not open | Actual provider support and saved draft identity; avoid duplicate drafts |
 
 A failed source does not invalidate independent verified work. It does prevent claims of complete current coverage. Do not recover another agent's lease by age alone; only the existing lease rules allow recovery of a provably dead process-owned lock.
+
+Widget publication is run-driven: after a successful verified board write, call the installed `publish-feed.py --publish` once. No widget content timer or periodic upload job. Unchanged content is not uploaded. The display helper only selects the monitor locally; iOS may still fetch the saved feed on its own schedule.

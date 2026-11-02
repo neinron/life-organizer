@@ -17,7 +17,7 @@ if result.returncode:
     raise SystemExit(result.returncode)
 try:
     data = json.loads(result.stdout)
-    if not data.get('error') and data.get('snapshot_at') and config_path.is_file():
+    if '--publish' in sys.argv[1:] and not data.get('error') and data.get('snapshot_at') and config_path.is_file():
         config = json.loads(config_path.read_text())
         endpoint = config['endpoint']
         parsed = urllib.parse.urlsplit(endpoint)
@@ -27,7 +27,7 @@ try:
         body = json.dumps(payload, ensure_ascii=False).encode()
         sha = hashlib.sha256(body).hexdigest()
         last = config.get('last_upload', {})
-        if sha != last.get('sha256') and time.time() - last.get('at', 0) >= 300:
+        if sha != last.get('sha256'):
             class NoRedirect(urllib.request.HTTPRedirectHandler):
                 def redirect_request(self, *args):
                     return None
@@ -44,4 +44,9 @@ try:
 except (OSError, ValueError, TypeError, KeyError):
     # Do not expose URLs, tokens, payloads or errors in widget output.
     pass
+if '--publish' in sys.argv[1:]:
+    # Refresh only this saved board after an organizer run. No source polling here.
+    subprocess.run(['/usr/bin/osascript', '-e',
+        'if application "/Applications/Übersicht.app" is running then tell application "/Applications/Übersicht.app" to refresh widget id "life-organizer-widget-index-jsx"'],
+        capture_output=True, timeout=10)
 sys.stdout.write(result.stdout)

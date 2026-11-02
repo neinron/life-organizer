@@ -3,7 +3,7 @@ import { run } from 'uebersicht';
 // Desktop presentation informed by Apple HIG: Widgets and Materials.
 // CSS approximation of system materials; this is not a WidgetKit extension.
 export const command = "/usr/bin/python3 \"$HOME/Library/Application Support/Übersicht/widgets/life-organizer.widget/lib/data.py\"";
-export const refreshFrequency = 60000;
+export const refreshFrequency = false;
 export const initialState = { output: '' };
 let chat = '';
 const validChat = value => /^codex:\/\/threads\/[a-f0-9-]{36}$/i.test(value);

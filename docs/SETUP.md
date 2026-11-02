@@ -31,3 +31,5 @@ Deploy the [mobile feed](../mobile-widget/README.md) to your own hostname with s
 ## 6. Optional mail document processing
 
 Install ClamAV at the configured Homebrew path and refresh local signatures with `organizer/scripts/update-mail-security.py`. Configure only existing approved document routes. Use preview before apply; missing signatures, unavailable isolation and failed inspections block PDF release. See [security](SECURITY.md).
+
+Widget publication is run-driven: after a successful verified board write, call the installed `publish-feed.py --publish` once. No widget content timer or periodic upload job. Unchanged content is not uploaded. The display helper only selects the monitor locally; iOS may still fetch the saved feed on its own schedule.

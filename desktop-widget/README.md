@@ -9,7 +9,7 @@ An opaque Übersicht board with flexible sections, padded click targets and nati
 3. Inside that folder, copy `config.example.json` to `config.json`; set `organizer_root` to the local organizer folder and optionally set your own chat link.
 4. Refresh widgets and enable interaction in Übersicht if needed.
 
-The display helper chooses one external monitor when available, otherwise the main display. The board uses a 16px inset at the top left. Display selection refreshes every 15 seconds; content every minute. Existing desktop widgets must be moved manually if their positions conflict.
+The display helper chooses one external monitor when available, otherwise the main display. The board uses a 16px inset at the top left. Display selection refreshes every 15 seconds; content only after an organizer run, with `refreshFrequency = false`. Existing desktop widgets must be moved manually if their positions conflict.
 
 ## Content and actions
 

@@ -4,6 +4,7 @@ From the repository root:
 
 ```sh
 node --test mobile-widget/worker.test.mjs mobile-widget/scriptable.test.mjs
+python3 -m unittest discover -s mobile-widget -p 'test_*.py'
 python3 -m unittest discover -s organizer/scripts -p 'test_*.py'
 ```
 
