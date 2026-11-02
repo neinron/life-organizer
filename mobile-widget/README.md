@@ -12,3 +12,11 @@ Separate Cloudflare Worker for `organizer.jaronschurer.com`. The personal websit
 - iPhone caches the last successful response locally. iOS controls refresh timing. Notion task URLs open Notion; standalone calendar ingestion and mobile organizer-chat links are not implemented.
 
 Run `node --test mobile-widget/worker.test.mjs` from the repository root. Do not commit tokens, local config, summary JSON or private organizer snapshots. Revoke a key by replacing its digest and provisioning a fresh key on the device or publisher.
+
+## Lock Screen
+
+The same Scriptable script detects accessory families automatically: rectangular shows the highest-priority note and a contextual SF Symbol; circular shows the number of attention notes; inline shows a short count/status above the clock. Uses the system-adaptive accessory background and monochrome text instead of the Home Screen layout. A tap links to the highest-priority Notion item. Offline or old source data is labeled.
+
+Reimport the updated `LifeOrganizer.js`, replacing the existing script; the Keychain entry is unchanged. Add a Scriptable widget through Lock Screen Customize and select this script. Rectangular is recommended for prose. Final appearance depends on the wallpaper and iOS tint and must be checked on the device.
+
+Run `node --test mobile-widget/worker.test.mjs mobile-widget/scriptable.test.mjs` in the exported repository for auth/data checks and mocked rendering of accessory and Home Screen layouts.

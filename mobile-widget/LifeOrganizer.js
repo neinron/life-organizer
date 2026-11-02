@@ -32,6 +32,50 @@ try {
   catch (_) { d = {error: Keychain.contains(keyName) ? 'Zusammenfassung gerade nicht erreichbar.' : 'Öffne das Script einmal in Scriptable und füge den Leseschlüssel ein.'}; }
 }
 const w = new ListWidget();
+const lockFamily = config.widgetFamily || '';
+const accessory = lockFamily.startsWith('accessory');
+if (accessory) {
+  w.setPadding(4, 4, 4, 4);
+  w.backgroundColor = new Color('000000', 0);
+  w.addAccessoryWidgetBackground = lockFamily !== 'accessoryInline';
+  w.refreshAfterDate = new Date(Date.now() + 15 * 60000);
+  const notes = d.attention || [];
+  const item = notes[0] || (d.today || [])[0];
+  const isDecision = item && item.label === 'Entscheidung nötig';
+  const iconName = offline ? 'arrow.clockwise' : isDecision ? 'exclamationmark.circle.fill' : notes.length ? 'sparkle' : 'checkmark.circle';
+  const symbol = SFSymbol.named(iconName);
+  const ink = Color.white();
+  const stamp = d.snapshot_at ? new Date(d.snapshot_at) : null;
+  const stale = offline || !stamp || Date.now() - stamp.getTime() > 12 * 3600000;
+  const label = stale ? 'Letzter Stand' : isDecision ? 'Entscheidung offen' : notes.length ? 'Jetzt wichtig' : 'Dein Tag';
+  const message = d.error ? 'Organizer einmal öffnen' : item ? (item.text || item.title) : 'Keine offenen Hinweise';
+  function lockText(parent, value, size, bold, lines) {
+    const t = parent.addText(value); t.textColor = ink;
+    t.font = bold ? Font.semiboldSystemFont(size) : Font.systemFont(size);
+    t.lineLimit = lines; return t;
+  }
+  if (lockFamily === 'accessoryInline') {
+    w.addImage(symbol.image);
+    lockText(w, notes.length ? notes.length + ' Hinweise · ' + (isDecision ? 'Entscheidung offen' : 'Organizer') : 'Organizer · ' + (stale ? 'Stand prüfen' : 'Alles im Blick'), 12, false, 1);
+  } else if (lockFamily === 'accessoryCircular') {
+    w.addSpacer();
+    const number = lockText(w, d.error ? '–' : String(notes.length), 26, true, 1); number.centerAlignText();
+    const caption = lockText(w, stale ? 'Stand prüfen' : 'Hinweise', 9, true, 1); caption.centerAlignText();
+    w.addSpacer();
+  } else {
+    const row = w.addStack(); row.layoutHorizontally(); row.topAlignContent();
+    const image = row.addImage(symbol.image); image.imageSize = new Size(18, 18); image.tintColor = ink;
+    row.addSpacer(6);
+    const copy = row.addStack(); copy.layoutVertically();
+    lockText(copy, label, 11, true, 1); copy.addSpacer(2);
+    lockText(copy, message, 12, false, 2);
+    if (stamp && stale) {
+      const df = new DateFormatter(); df.locale='de_DE'; df.dateFormat='dd.MM. HH:mm';
+      copy.addSpacer(2); lockText(copy, df.string(stamp), 9, false, 1);
+    }
+  }
+  if (item && typeof item.id === 'string' && /^[a-f0-9-]{32,36}$/i.test(item.id)) w.url = 'notion://www.notion.so/' + item.id.replace(/-/g, '');
+} else {
 w.backgroundColor = Color.dynamic(new Color('F6F6F8'), new Color('27272B'));
 w.setPadding(16,16,16,16);
 w.refreshAfterDate = new Date(Date.now()+15*60000);
@@ -69,6 +113,7 @@ const df=new DateFormatter();df.locale='de_DE';df.dateFormat='dd.MM. HH:mm';
 text(w,stamp?'Stand: '+df.string(stamp):'Noch kein Datenstand',10,secondary,false,1);
 if(offline || (stamp&&Date.now()-stamp.getTime()>12*3600000))text(w,offline ? 'Offline · letzter gespeicherter Stand' : 'Neuer Abgleich ausstehend',10,secondary,false,1);
 const first=notes.find(n=>notion(n.id))||(d.today||[]).find(n=>notion(n.id));if(first)w.url=notion(first.id);
+}
 Script.setWidget(w);
 if(!config.runsInWidget)await w.presentLarge();
 Script.complete();
