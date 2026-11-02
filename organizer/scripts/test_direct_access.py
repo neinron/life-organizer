@@ -5,7 +5,7 @@ def module(name,file):
  s=importlib.util.spec_from_file_location(name,Path(__file__).with_name(file));m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 n=module('normalizer','normalize-notion.py');c=module('localcal','local-calendars.py');l=module('lease','lease.py')
 class DirectAccessTests(unittest.TestCase):
- def row(self):return {'url':'https://app.notion.com/p/407444a6c447817a864eda3e97379054','Name':'Task','Status':'not started','Course':'[]','Fixiert':'__YES__','Created time':'2026-10-28T10:00:00Z','date:Do Date:start':'2026-10-28T11:00:00Z','date:Do Date:end':'2026-10-28T12:00:00Z'}
+ def row(self):return {'url':'https://app.notion.com/p/11111111111141118111111111111111','Name':'Task','Status':'not started','Course':'[]','Fixiert':'__YES__','Created time':'2026-10-28T10:00:00Z','date:Do Date:start':'2026-10-28T11:00:00Z','date:Do Date:end':'2026-10-28T12:00:00Z'}
  def test_normalizer_emits_typed_properties(self):
   r=n.normalize([{'results':[self.row()],'has_more':False}],{})['results'][0];self.assertEqual(r['properties']['Do Date']['type'],'date');self.assertTrue(r['properties']['Fixiert']['checkbox']);self.assertFalse(r['properties']['Registration']['checkbox'])
  def test_rejects_partial_snapshot(self):

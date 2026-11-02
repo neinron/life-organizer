@@ -1,47 +1,57 @@
 # Life Organizer
 
-A personal organizer for university, research, career and everyday life. It turns verified source changes into deduplicated Notion tasks, plans work against selected calendars and preserves real deadlines and fixed appointments.
+A personal executive assistant that brings tasks, calendars and verified source changes together. It helps identify what needs attention, proposes realistic next steps and publishes a concise information board for Mac and iPhone.
 
-## Components
+Notion owns task status. The calendar represents commitments and planned work. The organizer evaluates them together; the widgets display its editorial output.
 
-- `collector/`: read-only Cloudflare MCP collector with resumable change journal, Moodle/TUM integrations and metadata-only Netsec monitoring.
-- `organizer/`: offline planning, verified file sync and shared run lock. Start from `profile.example.json`; keep your actual profile private.
-- `mobile-widget/`: authenticated HTTPS summary feed and Scriptable iPhone widget; separate read/write credentials, local publishing, cached offline display.
-- `desktop-widget/`: Übersicht information board with attention notes, direct Notion app links and automatic external-display selection. See its README for setup and the private data contract.
-- `calendar-sync/`: existing Notion ↔ Google Calendar worker, including new standalone personal tasks.
+![Mac information board with fictional data](docs/images/desktop-widget.png)
 
-## Planning policy
+*All preview content is fictional. Screenshots are illustrative mockups, not personal source exports.*
 
-Notion is the task source of truth. `Fixiert` protects a task from automatic moves. Missed `not started` blocks can be replanned; completed/in-progress work is preserved. Working window08:30–21:30,15-minute buffer, flexible daily target. Important deadlines aim for completion the previous day. Same-course lecture blocks may host older unfinished lectures; verified own-work blocks may host matching work. Real appointments remain protected.
+## What it does
 
-Only create personal tasks from concrete source evidence. A shipment announcement is not pickup readiness. Do not invent deadlines or publish pickup codes, credentials or private message contents. Selected Apple reminders are deadline alerts, not a second full task list. Source collection is not permission to send messages, register for exams, submit coursework or solve restricted challenges.
+- Collects changes from configured university and personal sources with a resumable journal.
+- Plans unfinished work around selected calendars while preserving completed work, fixed tasks and real deadlines.
+- Produces a flexible information board: decisions, preparation, conflicts, replies and useful updates are chosen from current evidence, without fixed content categories.
+- Shows the board on a Mac through Übersicht and on an iPhone through Scriptable, including dedicated Lock Screen layouts.
+- Files relevant mail PDFs conservatively, with duplicate checks, a local malware scan and isolated parsing.
 
-## Setup
+The source collector and widget feed run on Cloudflare. Evaluation, native calendar access and publishing still need an awake Mac and the configured local runner. This repository does not provide an autonomous cloud assistant.
 
-1. Configure and deploy the collector following its README. Use Worker Secrets for credentials.
-2. Configure the calendar-sync Worker with your own Notion/Google credentials; apply its D1 migrations. Never commit `.env` files.
-3. Copy `organizer/profile.example.json` to a local ignored `profile.json`, configure source/context/calendar IDs and individual durations.
-4. Provide complete fresh Notion and calendar snapshots/manifests before running planners. Use a local scheduled Codex runner to evaluate changes and execute reviewed task plans; the source collector does not call an LLM API.
-5. Use `python3 organizer/scripts/run-mac-sync.py` for preview/apply with a shared lock. The local application must be running for local evaluation/UI fallbacks.
+## Preview
 
-```sh
-cd collector && npm ci && npm test && npm run type-check
-cd ../calendar-sync && npm ci && npm run test:worker && npm run typecheck
-cd ../organizer && python3 scripts/test_rolling_plan.py && python3 scripts/test_sync_files.py && python3 scripts/test_direct_access.py
-```
+| iPhone Home Screen | Lock Screen |
+| --- | --- |
+| ![iPhone board mockup](docs/images/iphone-widget.png) | ![Lock Screen mockup](docs/images/lock-screen.png) |
 
-This is a sanitized code snapshot, not a backup of a personal deployment. No personal configuration, messages, source materials, runtime journals or pre-existing private Git history are included. Use your own resource IDs, OAuth settings and permissions.
+## Start here
 
-## Direct local access
+| Goal | Guide |
+| --- | --- |
+| Understand the components and data flow | [Architecture](docs/ARCHITECTURE.md) |
+| Set up the system in order | [Setup](docs/SETUP.md) |
+| Run it and diagnose missing/stale information | [Operations](docs/OPERATIONS.md) |
+| Define the board and safe click targets | [Board contract](docs/BOARD.md) |
+| Understand access, privacy and document checks | [Security](docs/SECURITY.md) |
+| Run validation | [Development](docs/DEVELOPMENT.md) |
 
-On macOS, build `python3 organizer/scripts/build-apple-store.py`. The helper uses Apple's EventKit API, never browser automation or copied Exchange passwords. Explicitly request event/reminder permissions once; macOS grants full access, while this helper exposes no calendar-event writes and limits reminder writes to the existing Life Organizer list and stable Life-IDs. Discover calendars, then explicitly allowlist Exchange/personal iCloud IDs in your private profile. Avoid adding duplicate Google/TUM subscriptions.
+## Repository map
 
-Use `organizer/scripts/normalize-notion.py` to validate all connector-view pages and write typed snapshots/manifests without loading credentials. Use `organizer/scripts/local-calendars.py` to merge native calendar availability into a fresh Google freebusy snapshot before planning. The planner rejects missing/stale required native calendar coverage.
+| Directory | Responsibility |
+| --- | --- |
+| [`collector/`](collector/README.md) | Cloudflare MCP source collection, authentication and resumable change journal |
+| [`organizer/`](organizer/README.md) | Local planning, native calendar adapter, file processing and editorial checks |
+| [`calendar-sync/`](calendar-sync/README.md) | Existing Notion ↔ Google Calendar synchronization |
+| [`desktop-widget/`](desktop-widget/README.md) | Mac information board and external-monitor selection |
+| [`mobile-widget/`](mobile-widget/README.md) | Authenticated summary feed, Mac publisher and Scriptable iPhone widget |
+| [`docs/`](docs/README.md) | Cross-component setup, operation and reference material |
 
-The collector exposes `moodle_video_metadata` for collected ASE lecture MP4 headers (bounded ranges/prefix, max256KiB; no full video download) and `gitlab_repository_heads` for the two configured ASE repositories. The latter needs a separately approved `GITLAB_READ_TOKEN` Worker Secret with `read_repository` scope. No browser cookies or local credential-store probing. Configure the permitted teaching sources for your own deployment before use.
+## Operating principles
 
-Native calendar snapshots reflect accounts synchronized by macOS; local runs still need this Mac. Phone delivery is not verified by a successful Mac reminder write. GitLab API readiness must be checked after configuring its separate token.
+Use verified sources and preserve their timestamps. Deduplicate actions across mail, tasks and calendars. Do not infer completion from elapsed time or invent deadlines, travel time or free slots. A click opens an existing item; it does not send mail, create duplicate drafts, register for exams or submit coursework.
+
+This is a sanitized source repository. Personal profiles, accounts, messages, tasks, runtime journals, documents and access keys stay outside Git. Configure your own resources and permissions. Mock tests and published source do not prove a particular deployment, calendar sync or phone notification worked.
 
 ## Credits
 
-The original TUM collector was built by **Max Michels**: [mxmichels17/tum-mcp](https://github.com/mxmichels17/tum-mcp). It is MIT-licensed; its original copyright and license are preserved in `collector/LICENSE` and the root `LICENSE`. Life Organizer extends that foundation with personal planning, private-task support, reminders and verified file organization.
+The original TUM collector was built by **Max Michels**: [mxmichels17/tum-mcp](https://github.com/mxmichels17/tum-mcp). It is MIT-licensed; the original copyright and license are preserved in [collector/LICENSE](collector/LICENSE) and [LICENSE](LICENSE). Life Organizer extends that foundation with personal planning, private-task support, reminders, information boards and verified file organization.

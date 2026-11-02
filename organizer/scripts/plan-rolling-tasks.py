@@ -15,6 +15,24 @@ TASK_CAL = 'notion_tasks'
 def event_interval(e):
     return p.parse_dt(e.get('start', {}).get('dateTime') or e.get('start', {}).get('date')), p.parse_dt(e.get('end', {}).get('dateTime') or e.get('end', {}).get('date'))
 
+def recorded_lecture_slot(course, event):
+    """Only a source-backed replacement option can release a live class slot."""
+    policy = course.get('attendance', {})
+    start, _ = event_interval(event)
+    if not start:
+        return False
+    day = start.astimezone(p.TZ).date().isoformat()
+    if day in policy.get('protected_dates', []):
+        return False
+    text = event.get('summary', '') + ' ' + event.get('description', '')
+    if re.search(r'\b(?:guest|gastvortrag|gastvorlesung|fragestunde|tutorial|exercises?|übungen?|presentations?|präsentationen?|exams?|prüfungen?|klausur)\b', text, re.I):
+        return False
+    # An absent upload is not evidence of a recording policy. Unknown stays busy.
+    return any(rule.get('recording') in ('asynchronous_video', 'hybrid_recorded')
+               and rule.get('source')
+               and start.astimezone(p.TZ).weekday() in rule.get('weekdays', [])
+               for rule in policy.get('rules', []))
+
 def reusable_timeline(task, fb, details, profile):
     result=copy.deepcopy(fb);policy=profile['planning']
     if not policy.get('reusable_work_blocks',{}).get('enabled'):return result
@@ -34,10 +52,12 @@ def reusable_timeline(task, fb, details, profile):
         if [(x.start,x.end) for x in observed]!=[(x.start,x.end) for x in source]:continue
         replacement=[]
         for e,a,b in parsed:
-            lecture=bool(course and task.type.lower()=='lecture' and cid==profile.get('calendars',{}).get('tum_import') and course['name'].lower() in e.get('summary','').lower() and re.search(r'\b(?:VO|VI)\b',e.get('summary','')))
+            imported=cid==profile.get('calendars',{}).get('tum_import')
+            lecture=bool(course and task.type.lower()=='lecture' and imported and course['name'].lower() in e.get('summary','').lower() and re.search(r'\b(?:VO|VI)\b',e.get('summary','')) and recorded_lecture_slot(course,e))
             approved=any(x['calendar_id']==cid and x['event_id']==e['id'] and (task.id in x.get('task_ids',[]) or rels & set(x.get('context_ids',[]))) for x in policy.get('verified_reusable_blocks',[]))
             # General reuse requires an explicitly verified own-work block, never an appointment.
             if approved and (e.get('attendees') or e.get('eventType','default')!='default'):approved=False
+            if imported and not lecture:approved=False
             if not (lecture or approved):replacement.append({'start':a.isoformat(),'end':b.isoformat()})
         result['calendars'][cid]['busy']=replacement
     return result
@@ -54,7 +74,10 @@ def plan(data, fb, events, profile, now, calendar_details=None):
     general = set(policy['general_task_ids']); deferred = policy['deferred_task_ids']
     def scope(t):
         return in_scope(t,profile)
-    eligible = [t for t in tasks if scope(t) and t.status == 'not started' and not is_fixed(t)]
+    # A user-selected future day without a work interval is an intention to retain,
+    # not an invitation to pull the task into today's rolling work queue.
+    future_day_only = lambda t: bool(t.do_start and not t.do_end and t.do_start > now)
+    eligible = [t for t in tasks if scope(t) and t.status == 'not started' and not is_fixed(t) and not future_day_only(t)]
     missed = lambda t: t.do_start is not None and (t.do_end or t.do_start) <= now
     overdue = [t for t in eligible if missed(t)]
     missing = [t for t in eligible if not t.do_start]
@@ -97,7 +120,9 @@ def plan(data, fb, events, profile, now, calendar_details=None):
             positions=[i for i,t in enumerate(candidates) if t.course==course and not t.due_start and re.match(pattern,t.name,re.I)]
             def lesson_key(t):
                 number=tuple(map(int,re.match(pattern,t.name,re.I).group(1).split('.')))
-                if len(number)==2:number += (2 if 'Part 2' in t.name else 0,)
+                if len(number)==2:
+                    part=re.search(r'\bPart\s+(\d+)\b',t.name,re.I)
+                    number += (int(part.group(1)) if part else 0,)
                 return number
             ordered=sorted((candidates[i] for i in positions),key=lesson_key)
             for i,t in zip(positions,ordered):candidates[i]=t

@@ -73,6 +73,7 @@ import EventKit
                 let events = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))
                 let rows: [[String: Any]] = events.map { e in
                     ["id": e.eventIdentifier ?? e.calendarItemIdentifier,
+                     "calendar_item_id": e.calendarItemIdentifier,
                      "external_id": e.calendarItemExternalIdentifier ?? "", "calendar_id": e.calendar.calendarIdentifier,
                      "title": e.title ?? "", "start": iso(e.startDate), "end": iso(e.endDate),
                      "all_day": e.isAllDay, "status": e.status.rawValue,

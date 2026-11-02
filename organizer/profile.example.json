@@ -41,5 +41,26 @@
     "enabled": false,
     "calendar_ids": [],
     "freshness_minutes": 15
+  },
+  "mail_documents": {
+    "enabled": false,
+    "public_pdf_hosts": [
+      "arxiv.org"
+    ],
+    "routes": {
+      "research": {
+        "root": "/path/to/research/documents",
+        "rules": [
+          {
+            "senders": [
+              "researcher@example.edu"
+            ],
+            "all_terms": [
+              "example paper"
+            ]
+          }
+        ]
+      }
+    }
   }
 }

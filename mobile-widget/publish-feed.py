@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+import urllib.parse
 from pathlib import Path
 
 root = Path(__file__).resolve().parent
@@ -19,9 +20,10 @@ try:
     if not data.get('error') and data.get('snapshot_at') and config_path.is_file():
         config = json.loads(config_path.read_text())
         endpoint = config['endpoint']
-        if endpoint != 'https://organizer.jaronschurer.com/summary':
+        parsed = urllib.parse.urlsplit(endpoint)
+        if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.path != '/summary' or parsed.query or parsed.fragment:
             raise ValueError('Unexpected endpoint')
-        payload = {key: data.get(key) for key in ['snapshot_at', 'organizer_at', 'attention', 'updates', 'today']}
+        payload = {key: data.get(key) for key in ['snapshot_at', 'organizer_at', 'attention', 'updates', 'today', 'sections', 'board_at']}
         body = json.dumps(payload, ensure_ascii=False).encode()
         sha = hashlib.sha256(body).hexdigest()
         last = config.get('last_upload', {})

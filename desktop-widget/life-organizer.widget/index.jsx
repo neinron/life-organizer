@@ -6,9 +6,8 @@ export const command = "/usr/bin/python3 \"$HOME/Library/Application Support/Üb
 export const refreshFrequency = 60000;
 export const initialState = { output: '' };
 let chat = '';
-const openChat = () => {
-  if (/^codex:\/\/threads\/[a-f0-9-]{36}$/i.test(chat)) return run("/usr/bin/open '" + chat + "'");
-};
+const validChat = value => /^codex:\/\/threads\/[a-f0-9-]{36}$/i.test(value);
+const openChat = () => validChat(chat) ? run("/usr/bin/open '" + chat + "'") : undefined;
 
 export const className = `
   top: 16px; left: 16px; width: 344px;
@@ -26,22 +25,28 @@ export const className = `
     backdrop-filter: none;
     box-shadow: 0 3px 14px rgba(0,0,0,.12), inset 0 0 0 .5px rgba(0,0,0,.035); }
   header { display: flex; align-items: center; gap: 8px; color: var(--secondary); }
-  .notice { display: block; color: inherit; text-decoration: none; padding: 12px; margin: 0 -12px; }
+  .notice { font-size: 13px; line-height: 19px; display: block; color: inherit; text-decoration: none; padding: 8px 12px; margin: 0 -12px; }
   .notice + .notice { border-top: 0; }
   a.notice { border-radius: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   a.notice:hover { background: var(--control); }
   a.notice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .notice-label { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .notice-label { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .critical .notice-label { color: #b42318; }
+  .warning .notice-label { color: #9a4d00; }
+  @media (prefers-color-scheme: dark) {
+    .critical .notice-label { color: #ff8a80; }
+    .warning .notice-label { color: #ffc078; }
+  }
   .notice p, .update { font-size: 13px; line-height: 19px; margin: 0; }
   .update { color: var(--secondary); margin: 8px 0 0; }
   .app-icon { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
   .app-name { font-size: 12px; line-height: 17px; font-weight: 600; }
   .heading { display: flex; justify-content: space-between; align-items: baseline; margin-top: 0; }
   h1 { font-size: 22px; line-height: 27px; letter-spacing: -.4px; font-weight: 700; margin: 0; }
-  .date { font-size: 22px; line-height: 27px; letter-spacing: -.4px; font-weight: 500; color: var(--secondary); white-space: nowrap; }
-  section { margin-top: 4px; }
+  .date { display: flex; align-items: center; gap: 4px; font-size: 11px; line-height: 16px; font-weight: 500; color: var(--secondary); white-space: nowrap; }
+  section { margin-top: 16px; }
   h2 { font-size: 12px; line-height: 17px; font-weight: 600;
-    color: var(--secondary); margin: 0 0 8px; }
+    color: var(--secondary); margin: 0 0 4px; letter-spacing: .2px; }
   .row { display: flex; gap: 12px; padding: 8px 12px; margin: 0 -12px; align-items: flex-start; }
   a.row { color: inherit; text-decoration: none; border-radius: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   a.row:hover { background: var(--control); }
@@ -53,7 +58,7 @@ export const className = `
   .title { font-size: 13px; line-height: 17px; font-weight: 500;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .empty { font-size: 13px; color: var(--secondary); line-height: 20px; padding: 8px 0; }
-  .due-section { border-top: .5px solid var(--separator); margin-top: 12px; padding-top: 16px; }
+  .due-section { border-top: .5px solid var(--separator); margin-top: 12px; padding-top: 12px; }
   .freshness { margin-top: 16px; font-size: 11px; line-height: 16px; color: var(--tertiary); }
   .freshness strong { font-weight: 400; }
   .stale { color: var(--secondary); }
@@ -98,31 +103,40 @@ function label(value, deadline) {
   return d.toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
 }
 
+function relativeStand(value) {
+ if (!value) return 'Kein Stand';
+ const stamp = new Date(value), now = new Date();
+ const day = date => {const parts = new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date); const part=type=>Number(parts.find(p=>p.type===type).value);return Date.UTC(part('year'),part('month')-1,part('day'));};
+ const age = Math.round((day(now)-day(stamp))/86400000);
+ const time = stamp.toLocaleTimeString('de-DE', {timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit'});
+ return age===0?time:(age===1?'Gestern':stamp.toLocaleDateString('de-DE',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit'}))+' – '+time;
+}
+
+function boardAction(action, event) {
+  event.preventDefault();
+  const url = action && (action.desktop_url || action.url);
+  if (typeof url !== 'string' || /[\r\n]/.test(url)) return;
+  if (!/^calshow:\d{1,12}(?:\.\d+)?$/.test(url) && !/^(notion:\/\/|message:\/\/|ical:\/\/|https:\/\/(mail\.google\.com|outlook\.office\.com|outlook\.live\.com)\/)/i.test(url)) return;
+  const quoted = "'" + url.replace(/'/g, "'\\''") + "'";
+  const app = url.startsWith('notion:') ? '-a Notion ' : (url.startsWith('ical:') || url.startsWith('calshow:')) ? '-a Calendar ' : '';
+  run('/usr/bin/open ' + app + quoted);
+}
+
 export const render = ({ output, error }) => {
   let d;
   try { d = JSON.parse(output || '{}'); } catch (_) { d = { error: 'Daten werden aktualisiert.' }; }
   chat = d.chat || '';
   const placement = d.external_display ? {position: 'fixed', top: 16, left: 16, right: 'auto', width: 344, boxSizing: 'border-box'} : {};
   return <div className="surface" style={placement}>
-    <div className="heading"><h1>Dein Überblick</h1><span className="date">{new Date().toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
-    {(d.attention || []).length > 0 && <section aria-label="Braucht deine Aufmerksamkeit">
-      {d.attention.map((item, i) => <a className="notice" key={item.id || i}
-        href={item.id ? 'notion://www.notion.so/' + item.id.replace(/[^a-fA-F0-9]/g, '') : '#'}
-        onClick={event => { event.preventDefault(); if (item.id) run("/usr/bin/open -a Notion 'notion://www.notion.so/" + item.id.replace(/[^a-fA-F0-9]/g, '') + "'"); else openChat(); }}>
-        <div className="notice-label">{item.label}</div><p>{item.text}</p>
-      </a>)}
-    </section>}
-    {(d.updates || []).length > 0 && <section className="due-section"><h2>Gut zu wissen</h2>
-      {d.updates.map((text, i) => <p className="update" key={i}>{text}</p>)}
-    </section>}
-    <section className="due-section" aria-label="Heutige Aufgaben"><h2>Im Tagesplan</h2>
-      {(d.today || []).length ? d.today.map(t => <a className="row" key={t.id} href={"notion://www.notion.so/" + t.id.replace(/[^a-fA-F0-9]/g, "")} onClick={event => { event.preventDefault(); run("/usr/bin/open -a Notion 'notion://www.notion.so/" + t.id.replace(/[^a-fA-F0-9]/g, "") + "'"); }} aria-label={t.title + " in Notion öffnen"}>
-        <span className="time">{label(t.start)}</span><span className="title" title={t.title}>{t.title}</span>
-      </a>) : <div className="empty">{d.error || (error ? 'Organizer-Daten gerade nicht lesbar.' : output ? 'Keine Aufgaben im gespeicherten Tagesplan.' : 'Organizer wird geladen …')}</div>}
-    </section>
-    <div className="freshness"><strong>Aufgabenstand: {d.snapshot_label || 'wird geladen'}</strong><br/>
-      <span>Hinweise aus dem letzten gespeicherten Abgleich.</span>{d.stale && <span className="stale"><br/>Neuer Abgleich ausstehend</span>}
-    </div>
-    <button onClick={openChat} aria-label="Life-Organizer-Chat in der App öffnen"><span>Im Chat öffnen</span><span className="arrow">↗</span></button>
+    <div className="heading"><h1>Dein Überblick</h1><span className="date" title="Letzter verifizierter Datenstand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>{relativeStand(d.board_at || d.snapshot_at)}</span></div>
+    {Array.isArray(d.sections) && d.sections.length > 0 ? d.sections.filter(section => !Array.isArray(section.surfaces) || section.surfaces.includes('desktop')).map((section, index) =>
+      <section className={index ? 'due-section' : ''} key={section.id || index}>
+        {section.title ? <h2>{section.title}</h2> : null}
+        {(section.items || []).map((item, itemIndex) => <a className={'notice ' + (item.severity || 'info')} key={item.id || itemIndex}
+          href={item.action ? (item.action.desktop_url || item.action.url) : '#'} onClick={event => item.action ? boardAction(item.action, event) : event.preventDefault()}>
+          <span className="notice-label">{item.label ? item.label + ': ' : ''}</span><span>{item.text}</span>
+        </a>)}
+      </section>) : <div className="empty">{d.error || 'Keine Einträge in der letzten Übersicht.'}</div>}
+    {validChat(chat) && <button onClick={openChat} aria-label="Life-Organizer-Chat in der App öffnen"><span>Im Chat öffnen</span><span className="arrow">↗</span></button>}
   </div>;
 };

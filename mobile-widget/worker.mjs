@@ -14,11 +14,37 @@ async function authorized(request, expected) {
 function cleanText(value,max) {if(typeof value!=='string'||value.length>max)throw Error('text');return value;}
 function id(value){if(value===undefined||value===null)return null;if(typeof value!=='string'||! /^[a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12}$/i.test(value))throw Error('id');return value;}
 function stamp(value){if(typeof value!=='string'||!Number.isFinite(Date.parse(value))||Date.parse(value)>Date.now()+300000)throw Error('date');return value;}
+function cleanSections(sections) {
+ if(sections===undefined||sections===null)return [];
+ if(!Array.isArray(sections)||sections.length>6)throw Error('sections');
+ return sections.map(section=>{
+  if(!Array.isArray(section.items)||section.items.length>5)throw Error('items');
+  return {title:cleanText(section.title||'',100),surfaces:Array.isArray(section.surfaces)?section.surfaces.filter(x=>['desktop','mobile'].includes(x)):['desktop','mobile'],items:section.items.map(item=>{
+   let action=null;
+   if(item.action){const url=cleanText(item.action.url,8000);
+    const native=/^calshow:\d{1,12}(?:\.\d+)?$/.test(url);
+    if(/[\r\n]/.test(url)||(!native&&! /^(notion:\/\/|message:\/\/|ical:\/\/|https:\/\/(mail\.google\.com|outlook\.office\.com|outlook\.live\.com)\/)/i.test(url)))throw Error('action');
+    action={url};
+    if(item.action.desktop_url!==undefined){
+     const desktop=cleanText(item.action.desktop_url,300);
+     if(!/^ical:\/\/ekevent\/\d{8}T\d{6}Z\/[A-F0-9-]{36}\?method=show&options=more$/i.test(desktop))throw Error('desktop action');
+     action.desktop_url=desktop;
+    }
+    if(item.action.calendar!==undefined){
+     const c=item.action.calendar,start=cleanText(c.start,80),end=cleanText(c.end,80);
+     if(!native||!Number.isFinite(Date.parse(start))||!Number.isFinite(Date.parse(end))||Date.parse(end)<=Date.parse(start)||Date.parse(end)-Date.parse(start)>32*86400000)throw Error('calendar action');
+     action.calendar={title:cleanText(c.title,300),calendar_title:cleanText(c.calendar_title,100),start,end};
+    }
+   }
+   return {label:cleanText(item.label||'',80),text:cleanText(item.text,800),mobile_text:item.mobile_text===undefined?null:cleanText(item.mobile_text,400),mobile_label:item.mobile_label===undefined?null:cleanText(item.mobile_label,80),severity:['critical','warning','info'].includes(item.severity)?item.severity:'info',action};
+  })};
+ });
+}
 export function sanitize(data){
  if(!data||typeof data!=='object'||Array.isArray(data))throw Error('object');
  const array=(key,max)=>{if(!Array.isArray(data[key])||data[key].length>max)throw Error(key);return data[key];};
- return {schema_version:1,snapshot_at:stamp(data.snapshot_at),organizer_at:data.organizer_at?stamp(data.organizer_at):null,
- attention:array('attention',3).map(x=>({id:id(x.id),label:cleanText(x.label,80),text:cleanText(x.text,800)})),
+ return {schema_version:1,sections:cleanSections(data.sections),board_at:data.board_at?stamp(data.board_at):null,snapshot_at:stamp(data.snapshot_at),organizer_at:data.organizer_at?stamp(data.organizer_at):null,
+ attention:array('attention',3).map(x=>({id:id(x.id),severity:['critical','warning','info'].includes(x.severity)?x.severity:'info',label:cleanText(x.label,80),text:cleanText(x.text,800)})),
  updates:array('updates',2).map(x=>cleanText(x,800)),
  today:array('today',3).map(x=>({id:id(x.id),title:cleanText(x.title,300),start:x.start?cleanText(x.start,80):null})),
  uploaded_at:new Date().toISOString()};

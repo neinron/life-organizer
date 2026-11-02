@@ -1,13 +1,16 @@
 import hashlib, importlib.util, tempfile, unittest
+from unittest.mock import patch as mock_patch
+import sys
 from datetime import datetime
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('sync_files',Path(__file__).with_name('sync-files.py'))
 m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'lib'))
 
 class SyncTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.root=Path(self.tmp.name); self.stage=self.root/'staging'; self.stage.mkdir()
+        self.root=Path(self.tmp.name).resolve(); self.stage=self.root/'staging'; self.stage.mkdir()
         (self.stage/'x.pdf').write_bytes(b'new course file')
         self.profile={'study_root':str(self.root/'study'),'semester_folder':'5. Semester','courses':[{'key':'ase','folder':'ASE'}]}
         self.item={'course':'ase','name':'x.pdf','staged_path':'x.pdf','category':'Vorlesungen','sha256':hashlib.sha256(b'new course file').hexdigest()}
@@ -26,6 +29,24 @@ class SyncTests(unittest.TestCase):
         profile={**self.profile,'quiet_hours':{'enabled':False,'timezone':'Europe/Berlin','start':'23:00','end':'06:00'}}
         for stamp in ['2026-12-01T22:00:00+00:00','2026-07-01T21:00:00+00:00','2026-10-25T01:30:00+00:00']:
             with self.subTest(stamp=stamp): self.assertFalse(m.is_quiet_hours(profile,datetime.fromisoformat(stamp)))
+    def test_document_routes_require_verification_and_reject_challenge_bypass(self):
+        profile={**self.profile,'mail_documents':{'routes':{'project':{'root':str(self.root/'project')}}}}
+        item={**self.item,'scope':'mail_document','route_id':'project','verified':True,
+              'source_id':'mail:INBOX:1:1','source_url':'imap://example/INBOX;UID=1'}
+        with mock_patch('pdf_security.assess', return_value={'status':'passed'}):
+            self.assertEqual(m.sync_one(item,profile,self.stage)['status'],'planned')
+        for patch in [{'verified':False},{'route_id':'unknown'},{'challenge_id':'pwn02_01'},
+                      {'name':'pwn02_01.pdf'},{'category':'Hacking Challenges'},
+                      {'source_url':'https://netsec.net.in.tum.de/tasks/2'}]:
+            with self.subTest(patch=patch),self.assertRaises(ValueError):
+                m.sync_one({**item,**patch},profile,self.stage)
+    def test_symlink_destination_never_treated_as_an_existing_duplicate(self):
+        d=self.root/'study/5. Semester/ASE/Vorlesungen'; d.mkdir(parents=True)
+        (d/'x.pdf').symlink_to(self.stage/'x.pdf')
+        with self.assertRaises(ValueError): m.sync_one(self.item,self.profile,self.stage,True)
+    def test_excluded_course_rejected(self):
+        profile={**self.profile,'courses':[{'key':'ase','folder':'ASE','mode':'excluded'}]}
+        with self.assertRaises(ValueError): m.sync_one(self.item,profile,self.stage,True)
     def test_conflict_preserves_old_file(self):
         d=self.root/'study/5. Semester/ASE/Vorlesungen'; d.mkdir(parents=True); (d/'x.pdf').write_bytes(b'old')
         result=m.sync_one(self.item,self.profile,self.stage,True)

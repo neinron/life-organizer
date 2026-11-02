@@ -10,3 +10,15 @@
 **/__pycache__/
 *.log
 .DS_Store
+
+# Local widget configuration and personal source exports
+**/config.json
+**/widget-feed.json
+**/feed-access.json
+**/summary.json
+**/widget-board.json
+**/.venv/
+
+# Local preview capture metadata
+**/.playwright-cli/
+**/output/playwright/

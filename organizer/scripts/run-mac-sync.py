@@ -32,6 +32,15 @@ def main():
             failed = [r for r in report['apply']['results'] if r['status'] not in ('copied', 'already_present')]
             report['status'] = 'deferred' if failed else 'changed' if report['changes'] else 'unchanged'
             code = int(bool(failed))
+        # Recheck documents even if the queue is empty/already marked copied. A deleted or
+        # edited destination must never be reported as healthy merely because of old state.
+        document_state = ROOT / 'runtime/state/mail-documents.json'
+        if document_state.exists():
+            sys.path.insert(0, str(ROOT / 'lib'))
+            from mail_documents import audit
+            report['document_audit'] = audit(json.loads(document_state.read_text()))
+            if any(r['status'] != 'verified' for r in report['document_audit']):
+                report['status'] = 'deferred'; code = 1
     except Exception as exc:
         report.update(status='error', error=str(exc)); code = 1
     finally:
