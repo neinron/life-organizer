@@ -105,6 +105,6 @@ The [step-by-step setup guide](docs/SETUP.md) includes commands, configuration f
 
 This is a sanitized source repository. Real profiles, messages, tasks, runtime journals, documents and access keys stay outside Git. Tests and mock previews do not prove a particular deployment or external integration worked.
 
-## Credits
+---
 
-The original TUM collector was built by **Max Michels**: [mxmichels17/tum-mcp](https://github.com/mxmichels17/tum-mcp). It is MIT-licensed; the original copyright and license are preserved in [collector/LICENSE](collector/LICENSE) and [LICENSE](LICENSE). Life Organizer extends that foundation with personal planning, private-task support, reminders, information boards and verified file organization.
+The collector builds on [tum-mcp](https://github.com/mxmichels17/tum-mcp) by Max Michels. Original MIT notices are retained in [collector/LICENSE](collector/LICENSE) and [LICENSE](LICENSE).
