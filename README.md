@@ -36,6 +36,19 @@ After evaluating the sources together, the organizer can produce a concise edito
 
 Optional Mac and iPhone widgets display that saved overview and open verified existing tasks, calendar events or supported mail targets. Publication happens at the end of an organizer run, with unchanged uploads skipped. Widget refreshes do not initiate organizer runs.
 
+## Widget previews
+
+These illustrative mockups use entirely fictional content. Widgets are one presentation layer for the organizer's output; they do not perform the evaluation or planning.
+
+![Mac information board with fictional data](docs/images/desktop-widget.png)
+
+| iPhone Home Screen | Lock Screen |
+| --- | --- |
+| ![iPhone board mockup with fictional data](docs/images/iphone-widget.png) | ![Lock Screen mockup with fictional data](docs/images/lock-screen.png) |
+
+[Mac installation](desktop-widget/README.md) · [iPhone setup](mobile-widget/README.md) · [Board format](docs/BOARD.md)
+
+
 ## How a run works
 
 1. **Collect evidence.** Retrieve source changes and complete task/calendar snapshots; retain the last valid state when a source fails.
@@ -83,23 +96,6 @@ Start with [Setup](docs/SETUP.md), configure your own sources and permissions, a
 - **Verify outcomes.** A proposed change is not a completed action, and a successful local write does not prove delivery to another device.
 
 This is a sanitized source repository. Real profiles, messages, tasks, runtime journals, documents and access keys stay outside Git. Tests and mock previews do not prove a particular deployment or external integration worked.
-
-## Optional widget previews
-
-These illustrative mockups use entirely fictional content. Widgets are one presentation layer for the organizer's output; they do not perform the evaluation or planning.
-
-<details>
-<summary>View Mac, iPhone Home Screen and Lock Screen mockups</summary>
-
-![Mac information board with fictional data](docs/images/desktop-widget.png)
-
-| iPhone Home Screen | Lock Screen |
-| --- | --- |
-| ![iPhone board mockup with fictional data](docs/images/iphone-widget.png) | ![Lock Screen mockup with fictional data](docs/images/lock-screen.png) |
-
-[Mac installation](desktop-widget/README.md) · [iPhone setup](mobile-widget/README.md) · [Board format](docs/BOARD.md)
-
-</details>
 
 ## Credits
 
