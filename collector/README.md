@@ -159,7 +159,7 @@ The first deploy creates these resources automatically, because `wrangler.jsonc`
 - KV namespace for binding `OAUTH_KV` (OAuth clients, grants, tokens).
 - KV namespace for binding `CACHE` (TUMonline token, Artemis JWT, Moodle and TUM-Live sessions). Values are encrypted with AES-GCM when `COOKIE_ENCRYPTION_KEY` is set.
 - D1 database `tum-mcp` for binding `DB` (collector state and delta log, tables created in code).
-- Durable Object class `TumMCP` (one MCP session per connection).
+- Durable Object class `TumMCP` is retained only to drain legacy cleanup alarms; the `/mcp` transport is stateless and does not access it.
 - Cron trigger `*/30 * * * *` (runs the collector).
 - R2 bucket `tum-files` for binding `FILES` (collector HTML, files and large contents).
 
@@ -268,7 +268,7 @@ After a change to `wrangler.jsonc` or to the secret names, run `npm run cf-typeg
 ## Project layout
 
 ```
-src/index.ts               OAuth provider, MCP agent (Durable Object), cron, collector entrypoint
+src/index.ts               OAuth provider, stateless MCP route, retired session class, cron, collector entrypoint
 src/auth/github.ts         consent page, GitHub login, account check
 src/platforms/mail.ts      mail_ tools
 src/platforms/zulip.ts     zulip_ tools
@@ -334,3 +334,9 @@ Run `status` and `server_info` first after the deploy.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## MCP transport and write budget
+
+`/mcp` authenticates through the existing OAuth provider, then creates a fresh SDK server and JSON transport for each request. Protocol sessions are not persisted. GET server-push streams return 405; session DELETE is a no-write acknowledgement. Existing task/source data remains in KV, D1 and R2. The retained `TumMCP` class acknowledges old cleanup alarms without storage operations; no namespace deletion or source-data migration is part of this change.
+
+Regression tests in `test/stateless-mcp.test.ts` cover SDK client connections, parallel connection cycles, access restrictions and storage-free legacy alarms.

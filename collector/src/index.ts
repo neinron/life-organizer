@@ -1,8 +1,8 @@
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WorkerEntrypoint } from "cloudflare:workers";
-import { McpAgent } from "agents/mcp";
-import { GitHubHandler, isAllowedLogin, type Props } from "./auth/github";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
+import { statelessMcpHandler } from "./lib/stateless-mcp";
+import { GitHubHandler, isAllowedLogin } from "./auth/github";
 import { registerArtemisTools } from "./platforms/artemis";
 import { registerArtemisSubmitTools } from "./platforms/artemis-submit";
 import { registerItsScoreboardTools } from "./platforms/its-scoreboard";
@@ -29,11 +29,11 @@ import { registerNetsecMetadataTools } from "./collector/units/netsec";
 import { registerMoodleMediaTools } from "./platforms/moodle-media";
 import { registerGitlabMetadataTools } from "./platforms/gitlab-metadata";
 
-export const SERVER_VERSION = "0.10.0-life.1";
+export const SERVER_VERSION = "0.10.0-life.2";
 
 type Register = (server: McpServer, env: Env) => void;
 
-// Every tool group is registered on every new MCP session, also when a platform has no secrets.
+// Every tool group is registered on each authenticated request, also when a platform has no secrets.
 // The tools then answer "not configured" instead of being missing.
 const TOOL_GROUPS: [string, Register][] = [
 	["status", registerStatusTool],
@@ -67,17 +67,21 @@ export function registerOwnerTools(server: McpServer, env: Env) {
   registerServerInfoTool(server, env, SERVER_VERSION, failed);
 }
 
-export class TumMCP extends McpAgent<Env, Record<string, never>, Props> {
-	server = new McpServer({ name: "Life Organizer", version: SERVER_VERSION }, { instructions: watcherPolicy.instructions });
+/** Retained so old protocol-only objects drain alarms without further writes.
+ * Source data is stored separately. Preserve the namespace in this hotfix.
+ */
+export class TumMCP extends DurableObject<Env> {
+  async alarm(): Promise<void> { /* Acknowledge old cleanup alarms without storage writes. */ }
+  async fetch(): Promise<Response> { return new Response("MCP sessions retired", { status: 410 }); }
+  async webSocketMessage(ws: WebSocket): Promise<void> { ws.close(1001, "MCP sessions retired"); }
+  async webSocketClose(): Promise<void> {}
+  async webSocketError(): Promise<void> {}
+}
 
-	async init() {
-		// Defense in depth: the OAuth callback already rejects every other GitHub account.
-		if (!isAllowedLogin(this.env, this.props?.login)) {
-			console.warn(`MCP session without the allowed login (props: ${this.props ? "present" : "missing"}). No tools registered.`);
-			return;
-		}
-		registerOwnerTools(this.server, this.env);
-	}
+export function createOwnerServer(env: Env): McpServer {
+  const server = new McpServer({ name: "Life Organizer", version: SERVER_VERSION }, { instructions: watcherPolicy.instructions });
+  registerOwnerTools(server, env);
+  return server;
 }
 
 /** One collector unit per invocation. Called by runAll through the COLLECTOR service binding. */
@@ -87,7 +91,7 @@ export class CollectorRunner extends WorkerEntrypoint<Env> {
 	}
 }
 
-const mcpHandler = TumMCP.serve("/mcp");
+const mcpHandler = statelessMcpHandler(createOwnerServer, isAllowedLogin);
 
 // The OAuth resource (token audience) must be an absolute URL. It is derived from the
 // request origin, so the same code works on workers.dev, a custom domain and localhost.
